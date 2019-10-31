@@ -3,7 +3,10 @@ macro_rules! tt_list_create {
     {
         $caller:tt
     } => {
-        tt_list_indicator
+        tt_call::tt_return! {
+            $caller
+            list = [{ tt_list }]
+        }
     }
 }
 
@@ -12,10 +15,10 @@ macro_rules! tt_is_list {
     // validate the list format
     {
         $caller:tt
-        input = [{ $( tt_list_indicator [{ $($item:tt)* }] )* }]
+        input = [{ tt_list $( [{ $($item:tt)* }] )* }]
     } => {
         tt_call::tt_return! {
-            $caller:tt
+            $caller
             is_list = [{ true }]
         }
     };
@@ -26,7 +29,7 @@ macro_rules! tt_is_list {
         input = [{ $($other:tt)* }]
     } => {
         tt_call::tt_return! {
-            $caller:tt
+            $caller
             is_list = [{ false }]
         }
     }
@@ -37,10 +40,10 @@ macro_rules! tt_list_is_empty {
     // just the list indicator
     {
         $caller:tt
-        input = [{ tt_list_indicator }]
+        input = [{ tt_list }]
     } => {
         tt_call::tt_return! {
-            $caller:tt
+            $caller
             list_is_empty = [{ true }]
         }
     };
@@ -48,10 +51,10 @@ macro_rules! tt_list_is_empty {
     // list with some contents
     {
         $caller:tt
-        input = [{ tt_list_indicator $( [{ $($list:tt)* }] )+ }]
+        input = [{ tt_list $( [{ $($list:tt)* }] )+ }]
     } => {
         tt_call::tt_return! {
-            $caller:tt
+            $caller
             list_is_empty = [{ false }]
         }
     }
@@ -61,12 +64,12 @@ macro_rules! tt_list_is_empty {
 macro_rules! tt_list_push_front {
     {
         $caller:tt
-        list = [{ tt_list_indicator $( [{ $($list:tt)* }] )* }]
+        list = [{ tt_list $( [{ $($list:tt)* }] )* }]
         item = [{ $($item:tt)* }]
     } => {
         tt_call::tt_return! {
             $caller
-            list = [{ tt_list_indicator [{ $($item:tt)* }] $( [{ $($list:tt)* }] )* }]
+            list = [{ tt_list [{ $($item)* }] $( [{ $($list)* }] )* }]
         }
     }
 }
@@ -75,12 +78,12 @@ macro_rules! tt_list_push_front {
 macro_rules! tt_list_push_back {
     {
         $caller:tt
-        list = [{ tt_list_indicator $( [{ $($list:tt)* }] )* }]
+        list = [{ tt_list $( [{ $($list:tt)* }] )* }]
         item = [{ $($item:tt)* }]
     } => {
         tt_call::tt_return! {
             $caller
-            list = [{ tt_list_indicator $( [{ $($list:tt)* }] )* [{ $($item:tt)* }] }]
+            list = [{ tt_list $( [{ $($list)* }] )* [{ $($item)* }] }]
         }
     }
 }
@@ -89,11 +92,11 @@ macro_rules! tt_list_push_back {
 macro_rules! tt_list_pop_front {
     {
         $caller:tt
-        input = [{ tt_list_indicator [{ $($front:tt)* }] $( [{ $($rest:tt)* }] )* }]
+        input = [{ tt_list [{ $($front:tt)* }] $( [{ $($rest:tt)* }] )* }]
     } => {
         tt_call::tt_return! {
             $caller
-            list = [{ tt_list_indicator $( [{ $($rest:tt)* }] )* }]
+            list = [{ tt_list $( [{ $($rest)* }] )* }]
         }
     }
 }
@@ -102,37 +105,79 @@ macro_rules! tt_list_pop_front {
 macro_rules! tt_list_pop_back {
     {
         $caller:tt
-        input = [{ tt_list_indicator $( [{ $($rest:tt)* }] )* [{ $($back:tt)* }] }]
+        input = [{ tt_list $( [{ $($items:tt)* }] )+ }]
+    } => {
+        tt_list_pop_back_impl! {
+            $caller
+            list = [{ $( [{ $($items)* }] )+ }]
+            output = [{ tt_list }]
+        }
+    }
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! tt_list_pop_back_impl {
+    // on the last item
+    {
+        $caller:tt
+        list = [{ $item:tt }]
+        output = [{ $($output:tt)* }]
     } => {
         tt_call::tt_return! {
             $caller
-            list = [{ tt_list_indicator $( [{ $($rest:tt)* }] )* }]
+            list = [{ $($output)* }]
         }
-    }
+    };
+
+    // more than one item left
+    {
+        $caller:tt
+        list = [{ $first:tt $($rest:tt)+ }]
+        output = [{ $($output:tt)* }]
+    } => {
+        $crate::tt_list_pop_back_impl! {
+            $caller
+            list = [{ $($rest)+ }]
+            output = [{ $($output)* $first }]
+        }
+    };
 }
 
 #[macro_export]
 macro_rules! tt_list_front {
     {
         $caller:tt
-        input = [{ tt_list_indicator [{ $($front:tt)* }] $( [{ $($rest:tt)* }] )* }]
+        input = [{ tt_list [{ $($front:tt)* }] $( [{ $($rest:tt)* }] )* }]
     } => {
         tt_call::tt_return! {
             $caller
-            front = [{ $($front:tt)* }]
+            front = [{ $($front)* }]
         }
     }
 }
 
 #[macro_export]
 macro_rules! tt_list_back {
+    // only one item
     {
         $caller:tt
-        input = [{ tt_list_indicator $( [{ $($rest:tt)* }] )* [{ $($back:tt)* }] }]
+        input = [{ tt_list [{ $($item:tt)* }] }]
     } => {
         tt_call::tt_return! {
             $caller
-            front = [{ $($back:tt)* }]
+            back = [{ $($item)* }]
+        }
+    };
+
+    // pop items off until we get the last one
+    {
+        $caller:tt
+        input = [{ tt_list [{ $($front:tt)* }] $( [{ $($rest:tt)* }] )* }]
+    } => {
+        tt_list_back! {
+            $caller
+            input = [{ tt_list $( [{ $($rest)* }] )* }]
         }
     }
 }
@@ -141,7 +186,7 @@ macro_rules! tt_list_back {
 macro_rules! tt_list_reverse {
     {
         $caller:tt
-        input = [{ tt_list_indicator $($items:tt)* }]
+        input = [{ tt_list $($items:tt)* }]
     } => {
         tt_list_reverse_impl! {
             $caller
@@ -161,7 +206,7 @@ macro_rules! tt_list_reverse_impl {
     } => {
         tt_list_reverse_impl! {
             $caller
-            input = [{ $( [{ $($rest:tt)* }] )* }]
+            input = [{ $( [{ $($rest)* }] )* }]
             output = [{ $($output)* [{ $($front)* }] }]
         }
     };
@@ -173,7 +218,7 @@ macro_rules! tt_list_reverse_impl {
     } => {
         tt_call::tt_return! {
             $caller
-            list = [{ tt_list_indicator $($output:tt)* }]
+            list = [{ tt_list $($output:tt)* }]
         }
     }
 }
@@ -183,7 +228,7 @@ macro_rules! tt_list_transform {
     {
         $caller:tt
         macro = [{ $($m:ident)::* }]
-        list = [{ tt_list_indicator $($items:tt)* }]
+        list = [{ tt_list $($items:tt)* }]
         $(
             $input:ident = [{ $($tokens:tt)* }]
         )*
@@ -236,7 +281,7 @@ macro_rules! tt_list_transform_impl {
     } => {
         tt_call::tt_return! {
             $caller
-            list = [{ tt_list_indicator $($output:tt)* }]
+            list = [{ tt_list $($output:tt)* }]
         }
     }
 }

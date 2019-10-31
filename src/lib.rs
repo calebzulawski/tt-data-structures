@@ -1,1 +1,2 @@
-mod list;
+#[macro_use]
+pub mod list;
