@@ -1,3 +1,10 @@
+/// Creates an empty list. <sup>**[tt-call]**</sup>
+///
+/// # Input
+/// * None
+///
+/// # Output
+/// * `list = [{ tt_list }]`
 #[macro_export]
 macro_rules! tt_list_create {
     {
@@ -10,6 +17,14 @@ macro_rules! tt_list_create {
     }
 }
 
+/// Predicate that accepts tokens and determines whether it is a list.
+/// <sup>**[tt-call]**</sup>
+///
+/// # Input
+/// * `input = [{` tokens `}]`
+///
+/// # Output
+/// * `is_list = [{` true or false `}]`
 #[macro_export]
 macro_rules! tt_is_list {
     // validate the list format
@@ -35,6 +50,13 @@ macro_rules! tt_is_list {
     }
 }
 
+/// Predicate that accepts a list and determines whether it is empty. <sup>**[tt-call]**</sup>
+///
+/// # Input
+/// * `input = [{` a list `}]`
+///
+/// # Output
+/// * `list_is_empty = [{` true or false `}]`
 #[macro_export]
 macro_rules! tt_list_is_empty {
     // just the list indicator
@@ -60,6 +82,14 @@ macro_rules! tt_list_is_empty {
     }
 }
 
+/// Pushes an item to the front of a list. <sup>**[tt-call]**</sup>
+///
+/// # Input
+/// * `list = [{` a list `}]`
+/// * `item = [{` tokens `}]`
+///
+/// # Output
+/// * `list = [{` the new list }]`
 #[macro_export]
 macro_rules! tt_list_push_front {
     {
@@ -74,6 +104,14 @@ macro_rules! tt_list_push_front {
     }
 }
 
+/// Pushes an item to the back of a list. <sup>**[tt-call]**</sup>
+///
+/// # Input
+/// * `list = [{` a list `}]`
+/// * `item = [{` tokens `}]`
+///
+/// # Output
+/// * `list = [{` the new list `}]`
 #[macro_export]
 macro_rules! tt_list_push_back {
     {
@@ -88,6 +126,13 @@ macro_rules! tt_list_push_back {
     }
 }
 
+/// Pops an item from the front of a list. <sup>**[tt-call]**</sup>
+///
+/// # Input
+/// * `list = [{` a list `}]`
+///
+/// # Output
+/// * `list = [{` the new list `}]`
 #[macro_export]
 macro_rules! tt_list_pop_front {
     {
@@ -101,13 +146,20 @@ macro_rules! tt_list_pop_front {
     }
 }
 
+/// Pops an item from the back of a list. <sup>**[tt-call]**</sup>
+///
+/// # Input
+/// * `list = [{` a list `}]`
+///
+/// # Output
+/// * `list = [{` the new list `}]`
 #[macro_export]
 macro_rules! tt_list_pop_back {
     {
         $caller:tt
         input = [{ tt_list $( [{ $($items:tt)* }] )+ }]
     } => {
-        tt_list_pop_back_impl! {
+        $crate::tt_list_pop_back_impl! {
             $caller
             list = [{ $( [{ $($items)* }] )+ }]
             output = [{ tt_list }]
@@ -144,6 +196,13 @@ macro_rules! tt_list_pop_back_impl {
     };
 }
 
+/// Accesses the front of a list. <sup>**[tt-call]**</sup>
+///
+/// # Input
+/// * `list = [{` a list `}]`
+///
+/// # Output
+/// * `front = [{` the first item in the list `}]`
 #[macro_export]
 macro_rules! tt_list_front {
     {
@@ -157,6 +216,13 @@ macro_rules! tt_list_front {
     }
 }
 
+/// Accesses the back of a list. <sup>**[tt-call]**</sup>
+///
+/// # Input
+/// * `list = [{` a list `}]`
+///
+/// # Output
+/// * `back = [{` the last item in the list `}]`
 #[macro_export]
 macro_rules! tt_list_back {
     // only one item
@@ -182,13 +248,20 @@ macro_rules! tt_list_back {
     }
 }
 
+/// Reverses a list. <sup>**[tt-call]**</sup>
+///
+/// # Input
+/// * `list = [{` a list `}]`
+///
+/// # Output
+/// * `list = [{` the reversed list `}]`
 #[macro_export]
 macro_rules! tt_list_reverse {
     {
         $caller:tt
         input = [{ tt_list $($items:tt)* }]
     } => {
-        tt_list_reverse_impl! {
+        $crate::tt_list_reverse_impl! {
             $caller
             input = [{ $($items)* }]
             output = [{ }]
@@ -204,10 +277,10 @@ macro_rules! tt_list_reverse_impl {
         input = [{ [{ $($front:tt)* }] $( [{ $($rest:tt)* }] )* }]
         output = [{ $($output:tt)* }]
     } => {
-        tt_list_reverse_impl! {
+        $crate::tt_list_reverse_impl! {
             $caller
             input = [{ $( [{ $($rest)* }] )* }]
-            output = [{ $($output)* [{ $($front)* }] }]
+            output = [{ [{ $($front)* }] $($output)* }]
         }
     };
 
@@ -218,70 +291,7 @@ macro_rules! tt_list_reverse_impl {
     } => {
         tt_call::tt_return! {
             $caller
-            list = [{ tt_list $($output:tt)* }]
-        }
-    }
-}
-
-#[macro_export]
-macro_rules! tt_list_transform {
-    {
-        $caller:tt
-        macro = [{ $($m:ident)::* }]
-        list = [{ tt_list $($items:tt)* }]
-        $(
-            $input:ident = [{ $($tokens:tt)* }]
-        )*
-    } => {
-        tt_list_transform_impl! {
-            $caller
-            input = [{ $($items)* }]
-            output = [{ }]
-            $(
-                $input = [{ $($tokens)* }]
-            )*
-        }
-    }
-}
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! tt_list_transform_impl {
-    {
-        $caller:tt
-        macro = [{ $($m:ident)::* }]
-        input = [{ [{ $($front:tt)* }] $( [{ $($rest:tt)* }] )* }]
-        output = [{ $($output:tt)* }]
-        $(
-            $input:ident = [{ $($tokens:tt)* }]
-        )*
-    } => {
-        tt_list_reverse_impl! {
-            $caller
-            input = [{ $( [{ $($rest:tt)* }] )* }]
-            output = [{
-                [{
-                    tt_call::tt_call! {
-                        macro = [{ $($m)::* }]
-                        input = [{ $($front)* }]
-                        $(
-                            $input = [{ $($tokens)* }]
-                        )*
-                    }
-                }]
-                $($output)*
-            }]
-        }
-    };
-
-    {
-        $caller:tt
-        input = [{ }]
-        output = [{ $($output:tt)* }]
-    } => {
-        tt_call::tt_return! {
-            $caller
-            list = [{ tt_list $($output:tt)* }]
+            list = [{ tt_list $($output)* }]
         }
     }
 }

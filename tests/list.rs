@@ -176,4 +176,33 @@ mod test {
             }
         };
     }
+
+    #[test]
+    fn list_reverse() {
+        tt_call! {
+            macro = [{ tt_list_reverse }]
+            input = [{ tt_list [{ foo }] [{ bar }] [{ baz }] }]
+            ~~> assert_generated! {
+                expected = [{
+                    list = [{ tt_list [{ baz }] [{ bar }] [{ foo }] }]
+                }]
+            }
+        };
+    }
+
+    #[test]
+    fn list_transform() {
+        tt_call! {
+            macro = [{ tt_list_transform }]
+            transformation = [{ tt_call::tt_replace }]
+            input = [{ tt_list [{ foo }] [{ 1.0 }] [{ "hi" }] [{ bar }] }]
+            condition = [{ tt_call::is_ident }]
+            replace_with = [{ bar }]
+            ~~> assert_generated! {
+                expected = [{
+                    list = [{ tt_list [{ baz }] [{ 1.0 }] [{ "hi" }] [{ baz }] }]
+                }]
+            }
+        };
+    }
 }
